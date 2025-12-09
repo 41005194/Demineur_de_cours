@@ -19,6 +19,7 @@ from audio_manager import AudioManager
 from stats_manager import StatsManager
 from settings_manager import SettingsManager
 from menu_animation import ParallaxBackground, MenuAnimation, TextGlow
+from themes import THEMES
 
 # Initialize Pygame
 pygame.init()
@@ -46,510 +47,6 @@ MENU_WIDTH = int(SCREEN_WIDTH * 0.25)
 # Animation constants
 REVEAL_ANIMATION_DURATION = 0.15  # seconds
 FLAG_ANIMATION_DURATION = 0.1
-
-# Themes
-THEMES = {
-    "Ocean": {
-        "background": (20, 30, 48),
-        "header": (30, 45, 65),
-        "cell_hidden": (65, 105, 225),
-        "cell_hidden_hover": (100, 140, 255),
-        "cell_revealed": (240, 248, 255),
-        "cell_mine": (255, 99, 71),
-        "cell_flag": (255, 215, 0),
-        "border": (25, 55, 95),
-        "text": (255, 255, 255),
-        "text_dark": (30, 30, 30),
-        "button": (65, 105, 225),
-        "button_hover": (100, 140, 255),
-        "numbers": [
-            (0, 0, 0),        # 0 - not used
-            (0, 0, 255),      # 1 - blue
-            (0, 128, 0),      # 2 - green
-            (255, 0, 0),      # 3 - red
-            (0, 0, 128),      # 4 - dark blue
-            (128, 0, 0),      # 5 - dark red
-            (0, 128, 128),    # 6 - teal
-            (64, 64, 64),     # 7 - dark gray
-            (128, 128, 128),  # 8 - gray
-        ],
-    },
-    "Forest": {
-        "background": (34, 49, 34),
-        "header": (45, 65, 45),
-        "cell_hidden": (76, 153, 76),
-        "cell_hidden_hover": (100, 180, 100),
-        "cell_revealed": (245, 245, 220),
-        "cell_mine": (255, 69, 0),
-        "cell_flag": (255, 165, 0),
-        "border": (30, 60, 30),
-        "text": (255, 255, 255),
-        "text_dark": (30, 30, 30),
-        "button": (76, 153, 76),
-        "button_hover": (100, 180, 100),
-        "numbers": [
-            (0, 0, 0),        # 0 - not used
-            (0, 100, 0),      # 1 - dark green
-            (139, 69, 19),    # 2 - brown
-            (178, 34, 34),    # 3 - firebrick
-            (72, 61, 139),    # 4 - dark slate blue
-            (128, 0, 0),      # 5 - maroon
-            (32, 178, 170),   # 6 - light sea green
-            (184, 134, 11),   # 7 - dark goldenrod
-            (105, 105, 105),  # 8 - dim gray
-        ],
-    },
-    "Sunset": {
-        "background": (45, 25, 35),
-        "header": (65, 35, 50),
-        "cell_hidden": (255, 107, 107),
-        "cell_hidden_hover": (255, 140, 140),
-        "cell_revealed": (255, 250, 240),
-        "cell_mine": (139, 0, 0),
-        "cell_flag": (255, 215, 0),
-        "border": (80, 40, 60),
-        "text": (255, 255, 255),
-        "text_dark": (45, 25, 35),
-        "button": (255, 107, 107),
-        "button_hover": (255, 140, 140),
-        "numbers": [
-            (0, 0, 0),        # 0 - not used
-            (255, 69, 0),     # 1 - red-orange
-            (255, 140, 0),    # 2 - dark orange
-            (220, 20, 60),    # 3 - crimson
-            (199, 21, 133),   # 4 - medium violet red
-            (139, 0, 139),    # 5 - dark magenta
-            (255, 20, 147),   # 6 - deep pink
-            (178, 34, 34),    # 7 - firebrick
-            (139, 69, 19),    # 8 - saddle brown
-        ],
-    },
-    "Candy": {
-        "background": (255, 182, 193),
-        "header": (255, 160, 180),
-        "cell_hidden": (186, 85, 211),
-        "cell_hidden_hover": (218, 112, 214),
-        "cell_revealed": (255, 250, 250),
-        "cell_mine": (220, 20, 60),
-        "cell_flag": (50, 205, 50),
-        "border": (255, 105, 180),
-        "text": (75, 0, 130),
-        "text_dark": (75, 0, 130),
-        "button": (186, 85, 211),
-        "button_hover": (218, 112, 214),
-        "numbers": [
-            (0, 0, 0),        # 0 - not used
-            (138, 43, 226),   # 1 - blue violet
-            (255, 20, 147),   # 2 - deep pink
-            (255, 69, 0),     # 3 - red-orange
-            (30, 144, 255),   # 4 - dodger blue
-            (255, 105, 180),  # 5 - hot pink
-            (0, 206, 209),    # 6 - dark turquoise
-            (186, 85, 211),   # 7 - medium orchid
-            (147, 112, 219),  # 8 - medium purple
-        ],
-    },
-    "Midnight": {
-        "background": (15, 15, 25),
-        "header": (25, 25, 40),
-        "cell_hidden": (60, 60, 90),
-        "cell_hidden_hover": (80, 80, 120),
-        "cell_revealed": (45, 45, 60),
-        "cell_mine": (255, 50, 50),
-        "cell_flag": (0, 255, 127),
-        "border": (40, 40, 60),
-        "text": (200, 200, 220),
-        "text_dark": (200, 200, 220),
-        "button": (60, 60, 90),
-        "button_hover": (80, 80, 120),
-        "numbers": [
-            (150, 150, 150),  # 0 - not used
-            (100, 149, 237),  # 1 - cornflower blue
-            (50, 205, 50),    # 2 - lime green
-            (255, 99, 71),    # 3 - tomato
-            (138, 43, 226),   # 4 - blue violet
-            (255, 215, 0),    # 5 - gold
-            (0, 255, 255),    # 6 - cyan
-            (255, 192, 203),  # 7 - pink
-            (220, 220, 220),  # 8 - gainsboro
-        ],
-    },
-    "Neon": {
-        "background": (10, 10, 15),
-        "header": (15, 15, 25),
-        "cell_hidden": (20, 20, 35),
-        "cell_hidden_hover": (30, 30, 50),
-        "cell_revealed": (25, 25, 40),
-        "cell_mine": (255, 0, 100),
-        "cell_flag": (0, 255, 255),
-        "border": (255, 0, 255),
-        "text": (0, 255, 200),
-        "text_dark": (0, 255, 200),
-        "button": (40, 0, 80),
-        "button_hover": (80, 0, 160),
-        "numbers": [
-            (100, 100, 100),  # 0 - not used
-            (0, 200, 255),    # 1 - cyan bright
-            (0, 255, 100),    # 2 - spring green
-            (255, 50, 150),   # 3 - hot pink bright
-            (200, 0, 255),    # 4 - purple bright
-            (255, 255, 0),    # 5 - yellow
-            (255, 100, 0),    # 6 - orange bright
-            (100, 255, 255),  # 7 - cyan light
-            (255, 150, 255),  # 8 - pink light
-        ],
-    },
-    "Retro": {
-        "background": (40, 40, 40),
-        "header": (60, 60, 60),
-        "cell_hidden": (100, 100, 100),
-        "cell_hidden_hover": (120, 120, 120),
-        "cell_revealed": (200, 200, 180),
-        "cell_mine": (180, 50, 50),
-        "cell_flag": (255, 200, 50),
-        "border": (80, 80, 80),
-        "text": (255, 255, 230),
-        "text_dark": (40, 40, 40),
-        "button": (100, 100, 100),
-        "button_hover": (130, 130, 130),
-        "numbers": [
-            (60, 60, 60),     # 0 - not used
-            (0, 0, 180),      # 1 - blue
-            (0, 120, 0),      # 2 - green
-            (180, 0, 0),      # 3 - red
-            (0, 0, 120),      # 4 - dark blue
-            (120, 0, 0),      # 5 - dark red
-            (0, 120, 120),    # 6 - teal
-            (160, 160, 0),    # 7 - olive
-            (140, 140, 140),  # 8 - gray
-        ],
-    },
-    "Aurora": {
-        "background": (10, 20, 40),
-        "header": (15, 30, 55),
-        "cell_hidden": (30, 80, 120),
-        "cell_hidden_hover": (40, 100, 150),
-        "cell_revealed": (220, 240, 250),
-        "cell_mine": (255, 80, 120),
-        "cell_flag": (150, 255, 150),
-        "border": (50, 150, 200),
-        "text": (200, 255, 255),
-        "text_dark": (20, 40, 60),
-        "button": (40, 120, 180),
-        "button_hover": (60, 150, 210),
-        "numbers": [
-            (50, 50, 50),     # 0 - not used
-            (100, 200, 255),  # 1 - sky blue
-            (100, 255, 150),  # 2 - mint green
-            (255, 150, 180),  # 3 - light pink
-            (180, 100, 255),  # 4 - lavender
-            (255, 200, 100),  # 5 - peach
-            (100, 255, 255),  # 6 - light cyan
-            (200, 150, 255),  # 7 - light purple
-            (180, 180, 180),  # 8 - light gray
-        ],
-    },
-    "Lava": {
-        "background": (30, 10, 10),
-        "header": (50, 15, 15),
-        "cell_hidden": (150, 50, 30),
-        "cell_hidden_hover": (180, 70, 40),
-        "cell_revealed": (255, 240, 220),
-        "cell_mine": (50, 50, 50),
-        "cell_flag": (255, 255, 100),
-        "border": (100, 30, 20),
-        "text": (255, 220, 180),
-        "text_dark": (50, 20, 10),
-        "button": (180, 60, 30),
-        "button_hover": (220, 80, 40),
-        "numbers": [
-            (80, 40, 30),     # 0 - not used
-            (255, 150, 50),   # 1 - orange bright
-            (255, 200, 50),   # 2 - yellow-orange
-            (255, 80, 80),    # 3 - red bright
-            (200, 100, 50),   # 4 - burnt orange
-            (150, 50, 50),    # 5 - dark red
-            (255, 180, 100),  # 6 - light orange
-            (220, 120, 60),   # 7 - sienna
-            (180, 90, 70),    # 8 - brown-orange
-        ],
-    },
-    "Ice": {
-        "background": (230, 245, 255),
-        "header": (200, 230, 250),
-        "cell_hidden": (150, 200, 230),
-        "cell_hidden_hover": (170, 215, 240),
-        "cell_revealed": (255, 255, 255),
-        "cell_mine": (80, 80, 100),
-        "cell_flag": (255, 100, 100),
-        "border": (180, 210, 235),
-        "text": (40, 60, 90),
-        "text_dark": (40, 60, 90),
-        "button": (130, 180, 220),
-        "button_hover": (150, 200, 235),
-        "numbers": [
-            (100, 100, 100),  # 0 - not used
-            (0, 100, 200),    # 1 - ocean blue
-            (50, 150, 100),   # 2 - sea green
-            (200, 80, 80),    # 3 - salmon red
-            (100, 50, 150),   # 4 - purple
-            (150, 80, 80),    # 5 - rosy brown
-            (50, 150, 150),   # 6 - teal
-            (70, 130, 180),   # 7 - steel blue
-            (160, 160, 160),  # 8 - gray
-        ],
-    },
-    "Desert": {
-        "background": (60, 45, 30),
-        "header": (80, 60, 40),
-        "cell_hidden": (194, 154, 108),
-        "cell_hidden_hover": (214, 174, 128),
-        "cell_revealed": (255, 228, 181),
-        "cell_mine": (80, 40, 20),
-        "cell_flag": (255, 140, 0),
-        "border": (139, 90, 43),
-        "text": (255, 248, 220),
-        "text_dark": (60, 30, 10),
-        "button": (205, 133, 63),
-        "button_hover": (222, 184, 135),
-        "numbers": [
-            (100, 70, 40),    # 0 - not used
-            (210, 105, 30),   # 1 - chocolate
-            (255, 165, 0),    # 2 - orange
-            (178, 34, 34),    # 3 - firebrick
-            (160, 82, 45),    # 4 - sienna
-            (139, 69, 19),    # 5 - saddle brown
-            (184, 134, 11),   # 6 - dark goldenrod
-            (205, 133, 63),   # 7 - peru
-            (188, 143, 143),  # 8 - rosy brown
-        ],
-    },
-    "Galaxy": {
-        "background": (15, 10, 30),
-        "header": (25, 15, 45),
-        "cell_hidden": (60, 40, 100),
-        "cell_hidden_hover": (80, 60, 130),
-        "cell_revealed": (140, 120, 180),
-        "cell_mine": (255, 50, 100),
-        "cell_flag": (255, 215, 0),
-        "border": (100, 50, 150),
-        "text": (230, 200, 255),
-        "text_dark": (50, 30, 80),
-        "button": (80, 50, 120),
-        "button_hover": (110, 80, 150),
-        "numbers": [
-            (100, 80, 130),   # 0 - not used
-            (138, 43, 226),   # 1 - blue violet
-            (255, 105, 180),  # 2 - hot pink
-            (255, 69, 0),     # 3 - red-orange
-            (75, 0, 130),     # 4 - indigo
-            (199, 21, 133),   # 5 - medium violet red
-            (148, 0, 211),    # 6 - dark violet
-            (186, 85, 211),   # 7 - medium orchid
-            (216, 191, 216),  # 8 - thistle
-        ],
-    },
-    "Matrix": {
-        "background": (0, 10, 0),
-        "header": (0, 20, 0),
-        "cell_hidden": (0, 80, 0),
-        "cell_hidden_hover": (0, 120, 0),
-        "cell_revealed": (20, 50, 20),
-        "cell_mine": (255, 0, 0),
-        "cell_flag": (0, 255, 255),
-        "border": (0, 255, 0),
-        "text": (0, 255, 0),
-        "text_dark": (0, 255, 0),
-        "button": (0, 100, 0),
-        "button_hover": (0, 150, 0),
-        "numbers": [
-            (0, 200, 0),      # 0 - not used
-            (50, 255, 50),    # 1 - lime green bright
-            (100, 255, 100),  # 2 - light green
-            (150, 255, 150),  # 3 - pale green
-            (0, 220, 0),      # 4 - green bright
-            (0, 180, 0),      # 5 - green medium
-            (100, 255, 150),  # 6 - mint
-            (150, 255, 200),  # 7 - pale mint
-            (200, 255, 200),  # 8 - very pale green
-        ],
-    },
-    "Cherry": {
-        "background": (40, 15, 20),
-        "header": (60, 20, 30),
-        "cell_hidden": (180, 50, 80),
-        "cell_hidden_hover": (220, 70, 100),
-        "cell_revealed": (255, 192, 203),
-        "cell_mine": (100, 0, 20),
-        "cell_flag": (255, 255, 100),
-        "border": (139, 0, 50),
-        "text": (255, 240, 245),
-        "text_dark": (80, 20, 40),
-        "button": (200, 60, 90),
-        "button_hover": (230, 90, 120),
-        "numbers": [
-            (150, 60, 80),    # 0 - not used
-            (255, 20, 147),   # 1 - deep pink
-            (220, 20, 60),    # 2 - crimson
-            (178, 34, 34),    # 3 - firebrick
-            (199, 21, 133),   # 4 - medium violet red
-            (219, 112, 147),  # 5 - pale violet red
-            (255, 105, 180),  # 6 - hot pink
-            (205, 92, 92),    # 7 - indian red
-            (188, 143, 143),  # 8 - rosy brown
-        ],
-    },
-    "Emerald": {
-        "background": (10, 30, 20),
-        "header": (15, 45, 30),
-        "cell_hidden": (46, 125, 50),
-        "cell_hidden_hover": (60, 150, 65),
-        "cell_revealed": (144, 238, 144),
-        "cell_mine": (139, 0, 0),
-        "cell_flag": (255, 215, 0),
-        "border": (34, 139, 34),
-        "text": (240, 255, 240),
-        "text_dark": (20, 60, 30),
-        "button": (60, 179, 113),
-        "button_hover": (90, 200, 140),
-        "numbers": [
-            (40, 100, 50),    # 0 - not used
-            (0, 128, 0),      # 1 - green
-            (34, 139, 34),    # 2 - forest green
-            (0, 100, 0),      # 3 - dark green
-            (50, 205, 50),    # 4 - lime green
-            (60, 179, 113),   # 5 - medium sea green
-            (32, 178, 170),   # 6 - light sea green
-            (46, 139, 87),    # 7 - sea green
-            (143, 188, 143),  # 8 - dark sea green
-        ],
-    },
-    "Copper": {
-        "background": (25, 20, 15),
-        "header": (40, 30, 20),
-        "cell_hidden": (120, 80, 50),
-        "cell_hidden_hover": (150, 100, 60),
-        "cell_revealed": (218, 165, 105),
-        "cell_mine": (50, 30, 20),
-        "cell_flag": (0, 206, 209),
-        "border": (139, 90, 43),
-        "text": (255, 235, 205),
-        "text_dark": (40, 25, 15),
-        "button": (160, 110, 70),
-        "button_hover": (180, 130, 90),
-        "numbers": [
-            (100, 70, 40),    # 0 - not used
-            (184, 134, 11),   # 1 - dark goldenrod
-            (218, 165, 32),   # 2 - goldenrod
-            (205, 127, 50),   # 3 - peru
-            (160, 82, 45),    # 4 - sienna
-            (139, 69, 19),    # 5 - saddle brown
-            (210, 105, 30),   # 6 - chocolate
-            (188, 143, 143),  # 7 - rosy brown
-            (222, 184, 135),  # 8 - burly wood
-        ],
-    },
-    "Lavender": {
-        "background": (45, 35, 60),
-        "header": (60, 45, 80),
-        "cell_hidden": (147, 112, 219),
-        "cell_hidden_hover": (167, 132, 239),
-        "cell_revealed": (230, 230, 250),
-        "cell_mine": (75, 0, 130),
-        "cell_flag": (255, 215, 0),
-        "border": (123, 104, 238),
-        "text": (248, 248, 255),
-        "text_dark": (60, 40, 90),
-        "button": (138, 43, 226),
-        "button_hover": (158, 63, 246),
-        "numbers": [
-            (100, 70, 140),   # 0 - not used
-            (138, 43, 226),   # 1 - blue violet
-            (147, 112, 219),  # 2 - medium purple
-            (153, 50, 204),   # 3 - dark orchid
-            (186, 85, 211),   # 4 - medium orchid
-            (216, 191, 216),  # 5 - thistle
-            (221, 160, 221),  # 6 - plum
-            (218, 112, 214),  # 7 - orchid
-            (238, 130, 238),  # 8 - violet
-        ],
-    },
-    "Cyber": {
-        "background": (5, 5, 15),
-        "header": (10, 10, 25),
-        "cell_hidden": (30, 30, 60),
-        "cell_hidden_hover": (50, 50, 90),
-        "cell_revealed": (60, 60, 100),
-        "cell_mine": (255, 0, 0),
-        "cell_flag": (0, 255, 255),
-        "border": (0, 255, 255),
-        "text": (0, 255, 255),
-        "text_dark": (0, 255, 255),
-        "button": (50, 50, 100),
-        "button_hover": (70, 70, 130),
-        "numbers": [
-            (100, 200, 255),  # 0 - not used
-            (0, 255, 255),    # 1 - cyan
-            (255, 0, 255),    # 2 - magenta
-            (255, 100, 255),  # 3 - pink bright
-            (100, 255, 255),  # 4 - cyan light
-            (200, 100, 255),  # 5 - purple light
-            (255, 255, 100),  # 6 - yellow light
-            (150, 255, 200),  # 7 - mint cyan
-            (255, 200, 150),  # 8 - peach light
-        ],
-    },
-    "Jungle": {
-        "background": (20, 35, 20),
-        "header": (30, 50, 30),
-        "cell_hidden": (34, 139, 34),
-        "cell_hidden_hover": (50, 170, 50),
-        "cell_revealed": (154, 205, 50),
-        "cell_mine": (101, 67, 33),
-        "cell_flag": (255, 140, 0),
-        "border": (85, 107, 47),
-        "text": (240, 255, 240),
-        "text_dark": (25, 50, 25),
-        "button": (107, 142, 35),
-        "button_hover": (124, 160, 50),
-        "numbers": [
-            (50, 80, 30),     # 0 - not used
-            (0, 128, 0),      # 1 - green
-            (34, 139, 34),    # 2 - forest green
-            (107, 142, 35),   # 3 - olive drab
-            (85, 107, 47),    # 4 - dark olive green
-            (124, 252, 0),    # 5 - lawn green
-            (127, 255, 0),    # 6 - chartreuse
-            (173, 255, 47),   # 7 - green yellow
-            (144, 238, 144),  # 8 - light green
-        ],
-    },
-    "Slate": {
-        "background": (30, 35, 40),
-        "header": (45, 52, 60),
-        "cell_hidden": (70, 80, 90),
-        "cell_hidden_hover": (90, 100, 110),
-        "cell_revealed": (176, 196, 222),
-        "cell_mine": (25, 25, 112),
-        "cell_flag": (255, 165, 0),
-        "border": (112, 128, 144),
-        "text": (240, 248, 255),
-        "text_dark": (30, 40, 50),
-        "button": (100, 120, 140),
-        "button_hover": (120, 140, 160),
-        "numbers": [
-            (60, 70, 80),     # 0 - not used
-            (70, 130, 180),   # 1 - steel blue
-            (100, 149, 237),  # 2 - cornflower blue
-            (65, 105, 225),   # 3 - royal blue
-            (72, 61, 139),    # 4 - dark slate blue
-            (106, 90, 205),   # 5 - slate blue
-            (123, 104, 238),  # 6 - medium slate blue
-            (135, 206, 250),  # 7 - light sky blue
-            (176, 196, 222),  # 8 - light steel blue
-        ],
-    },
-}
 
 
 class GameState(Enum):
@@ -1496,20 +993,20 @@ class Minesweeper:
 
         self.screen.fill(theme["background"])
 
-        # Title
+        # Title with more space
         title = self.header_font.render("Settings", True, theme["text"])
-        title_rect = title.get_rect(center=(current_width // 2, int(current_height * 0.06)))
+        title_rect = title.get_rect(center=(current_width // 2, int(current_height * 0.04)))
         self.screen.blit(title, title_rect)
 
-        # Player name input - at the top
+        # Player name section
         name_label = self.text_font.render("Player Name:", True, theme["text"])
-        name_label_rect = name_label.get_rect(center=(current_width // 2, int(current_height * 0.12)))
+        name_label_rect = name_label.get_rect(center=(current_width // 2, int(current_height * 0.10)))
         self.screen.blit(name_label, name_label_rect)
 
         input_color = theme["button_hover"] if self.name_input_active else theme["button"]
         name_rect = pygame.Rect(
             current_width // 2 - int(current_width * 0.08),
-            int(current_height * 0.155),
+            int(current_height * 0.135),
             int(current_width * 0.16),
             int(current_height * 0.035),
         )
@@ -1521,18 +1018,19 @@ class Minesweeper:
         name_text_rect = name_surface.get_rect(center=name_rect.center)
         self.screen.blit(name_surface, name_text_rect)
 
-        # Dark mode toggle - on same row as name
+        # Dark mode toggle - separate row with better spacing
         dark_mode_label = self.text_font.render("Dark Mode:", True, theme["text"])
-        dark_mode_label_rect = dark_mode_label.get_rect(topleft=(int(current_width * 0.12), int(current_height * 0.22)))
+        dark_mode_label_rect = dark_mode_label.get_rect(center=(current_width // 2 - int(current_width * 0.20), int(current_height * 0.19)))
         self.screen.blit(dark_mode_label, dark_mode_label_rect)
         
         toggle_rect = pygame.Rect(
-            int(current_width * 0.28),
-            int(current_height * 0.217),
-            int(current_width * 0.06),
-            int(current_height * 0.035),
+            current_width // 2 + int(current_width * 0.05),
+            int(current_height * 0.175),
+            int(current_width * 0.07),
+            int(current_height * 0.04),
         )
-        toggle_color = theme["cell_flag"] if self.dark_mode else theme["button"]
+        # Use cell_hidden when off, cell_flag when on for better contrast
+        toggle_color = theme["cell_flag"] if self.dark_mode else theme["cell_hidden"]
         pygame.draw.rect(self.screen, toggle_color, toggle_rect, border_radius=5)
         pygame.draw.rect(self.screen, theme["border"], toggle_rect, 2, border_radius=5)
         self.dark_mode_toggle_rect = toggle_rect
@@ -1555,18 +1053,18 @@ class Minesweeper:
         if self.mines_slider.value > self.mines_slider.max_val:
             self.mines_slider.value = self.mines_slider.max_val
 
-        # Preset buttons section
+        # Preset buttons section with better spacing
         preset_label = self.text_font.render("Quick Presets", True, theme["text"])
-        preset_label_rect = preset_label.get_rect(center=(current_width // 2, int(current_height * 0.49)))
+        preset_label_rect = preset_label.get_rect(center=(current_width // 2, int(current_height * 0.52)))
         self.screen.blit(preset_label, preset_label_rect)
 
         for button_name, button in self.settings_buttons.items():
             if button_name != "back":
                 button.draw(self.screen, theme)
 
-        # Theme selection section - with current theme highlighted
+        # Theme selection section - with current theme highlighted and more space
         theme_label = self.text_font.render(f"Theme: {self.current_theme}", True, theme["text"])
-        theme_label_rect = theme_label.get_rect(center=(current_width // 2, int(current_height * 0.58)))
+        theme_label_rect = theme_label.get_rect(center=(current_width // 2, int(current_height * 0.63)))
         self.screen.blit(theme_label, theme_label_rect)
 
         # Draw theme buttons in a grid
@@ -1795,8 +1293,8 @@ class Minesweeper:
         ach_list = list(achievements.items())
         
         start_y = int(current_height * 0.20)
-        row_height = int(current_height * 0.08)
-        rows_per_screen = 5
+        row_height = int(current_height * 0.11)  # Increased spacing
+        rows_per_screen = 4  # Reduced to 4 per screen for better spacing
 
         for i in range(rows_per_screen):
             idx = self.current_ach_index + i
@@ -1811,7 +1309,7 @@ class Minesweeper:
                 int(current_width * 0.05),
                 y,
                 int(current_width * 0.90),
-                int(row_height * 0.9),
+                int(row_height * 0.85),
             )
             
             # Color based on unlock status
@@ -1819,32 +1317,39 @@ class Minesweeper:
             pygame.draw.rect(self.screen, box_color, box_rect, border_radius=8)
             pygame.draw.rect(self.screen, theme["border"], box_rect, 2, border_radius=8)
 
-            # Icon
-            icon = self.text_font.render(ach.icon, True, theme["text"])
-            self.screen.blit(icon, (int(current_width * 0.08), y + int(row_height * 0.15)))
+            # Icon - use header font for better emoji display
+            icon_text = ach.icon if ach.icon else "🏆"  # Fallback to trophy emoji
+            try:
+                # Try to render emoji with a font that supports it
+                icon = self.header_font.render(icon_text, True, theme["text"])
+                self.screen.blit(icon, (int(current_width * 0.08), y + int(row_height * 0.08)))
+            except Exception:
+                # Fallback: just render the emoji symbol as is
+                icon = self.small_font.render(icon_text, True, theme["text"])
+                self.screen.blit(icon, (int(current_width * 0.08), y + int(row_height * 0.15)))
 
-            # Name and description
+            # Name and description with better spacing
             name_color = theme["text"] if ach.unlocked else (100, 100, 100)
             name = self.header_font.render(ach.name, True, name_color)
-            self.screen.blit(name, (int(current_width * 0.13), y + int(row_height * 0.10)))
+            self.screen.blit(name, (int(current_width * 0.18), y + int(row_height * 0.08)))
 
             desc = self.small_font.render(ach.description, True, name_color)
-            self.screen.blit(desc, (int(current_width * 0.13), y + int(row_height * 0.50)))
+            self.screen.blit(desc, (int(current_width * 0.18), y + int(row_height * 0.48)))
 
             # Unlock date if unlocked
             if ach.unlocked and ach.unlock_date:
                 date_text = self.small_font.render(f"Unlocked: {ach.unlock_date[:10]}", True, theme["cell_flag"])
-                self.screen.blit(date_text, (int(current_width * 0.70), y + int(row_height * 0.50)))
+                self.screen.blit(date_text, (int(current_width * 0.70), y + int(row_height * 0.48)))
 
-        # Navigation buttons
+        # Navigation buttons - positioned to avoid overlap
         button_y = int(current_height * 0.88)
         button_width = int(current_width * 0.12)
         button_height = int(current_height * 0.048)
-        small_font_size = int(current_height * 0.02)
+        small_font_size = int(current_height * 0.018)
 
-        # Back button
+        # Back button - centered
         back_btn = Button(
-            int(current_width * 0.02),
+            int(current_width * 0.44),
             button_y,
             button_width,
             button_height,
@@ -1860,15 +1365,15 @@ class Minesweeper:
             True,
             theme["text"],
         )
-        nav_rect = nav_text.get_rect(center=(current_width // 2, button_y + int(button_height * 0.4)))
+        nav_rect = nav_text.get_rect(center=(current_width // 2, button_y - int(button_height * 0.8)))
         self.screen.blit(nav_text, nav_rect)
 
-        # Prev/Next buttons
+        # Prev/Next buttons - moved further apart
         if self.current_ach_index > 0:
             prev_btn = Button(
-                int(current_width * 0.10),
+                int(current_width * 0.12),
                 button_y,
-                int(current_width * 0.08),
+                int(current_width * 0.10),
                 button_height,
                 "← Prev",
                 int(small_font_size * 0.9),
@@ -1878,9 +1383,9 @@ class Minesweeper:
 
         if self.current_ach_index + rows_per_screen < len(ach_list):
             next_btn = Button(
-                int(current_width * 0.82),
+                int(current_width * 0.78),
                 button_y,
-                int(current_width * 0.08),
+                int(current_width * 0.10),
                 button_height,
                 "Next →",
                 int(small_font_size * 0.9),
