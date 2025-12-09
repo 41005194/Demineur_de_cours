@@ -8,11 +8,12 @@ Un jeu de démineur moderne et personnalisable avec animations, thèmes colorés
 ## ✨ Fonctionnalités
 
 - 🎮 **Jouabilité complète** - Toutes les règles classiques du démineur
-- 🎨 **10 thèmes colorés** - Ocean, Forest, Sunset, Candy, Midnight, Neon, Retro, Aurora, Lava, Ice
-- ✨ **Animations fluides** - Révélation des cellules, drapeaux, explosions
+- 🎨 **21 thèmes colorés** - Ocean, Forest, Sunset, Candy, Midnight, Neon, Retro, Aurora, Lava, Ice, Desert, Galaxy, Matrix, Cherry, Emerald, Copper, Lavender, Cyber, Jungle, Slate
+- ✨ **Animations fluides** - Révélation des cellules, drapeaux, explosions avec effets visuels
 - 📐 **Résolution adaptative** - S'adapte à toutes les tailles d'écran
+- 🖥️ **Mode fenêtré et plein écran** - Basculez avec F11 ou via le bouton du menu
 - ⚙️ **Personnalisation totale** - Taille du plateau (5x5 à 25x25) et nombre de mines
-- 🏆 **Système de classement** - Scores séparés par configuration
+- 🏆 **Système de classement** - Scores séparés par configuration avec date et heure
 - ⏱️ **Chronomètre** - Suivez votre temps de résolution
 - 🎯 **Presets** - Débutant (9x9), Intermédiaire (16x16), Expert (22x22)
 
@@ -40,6 +41,8 @@ python minesweeper.py
 
 - **Clic gauche** - Révéler une case
 - **Clic droit** - Placer/retirer un drapeau
+- **F11** - Basculer entre mode fenêtré et plein écran
+- **Bouton "Enter/Exit Fullscreen"** - Basculer le mode d'affichage depuis le menu
 - **ESC** - Retour au menu / Quitter
 
 ### Règles du jeu
@@ -134,11 +137,5 @@ Créé avec ❤️ pour les amateurs de démineur !
 - [ ] Modes de jeu alternatifs (hexagonal, 3D)
 - [ ] Système de succès/achievements
 - [ ] Support de différentes langues
-
-## 📸 Captures d'écran
-
-*(Ajoutez vos captures d'écran ici)*
-
----
 
 **Bon jeu ! 💣🎮**

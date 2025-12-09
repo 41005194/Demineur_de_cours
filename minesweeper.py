@@ -18,10 +18,18 @@ from typing import List, Optional, Tuple, Dict
 pygame.init()
 pygame.font.init()
 
-# Get display info for fullscreen
+# Get display info
 display_info = pygame.display.Info()
-SCREEN_WIDTH = display_info.current_w
-SCREEN_HEIGHT = display_info.current_h
+FULLSCREEN_WIDTH = display_info.current_w
+FULLSCREEN_HEIGHT = display_info.current_h
+
+# Default windowed mode size (80% of screen)
+WINDOWED_WIDTH = int(FULLSCREEN_WIDTH * 0.8)
+WINDOWED_HEIGHT = int(FULLSCREEN_HEIGHT * 0.8)
+
+# Current screen dimensions (will be updated based on mode)
+SCREEN_WIDTH = WINDOWED_WIDTH
+SCREEN_HEIGHT = WINDOWED_HEIGHT
 
 # Game constants - now relative to screen size
 MIN_CELL_SIZE = max(20, int(SCREEN_HEIGHT * 0.025))
@@ -465,9 +473,19 @@ class Slider:
 
 class Minesweeper:
     def __init__(self):
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN)
+        # Start in windowed mode
+        self.is_fullscreen = False
+        self.screen = pygame.display.set_mode((WINDOWED_WIDTH, WINDOWED_HEIGHT), pygame.RESIZABLE)
         pygame.display.set_caption("Minesweeper")
         self.clock = pygame.time.Clock()
+        
+        # Update global screen dimensions
+        global SCREEN_WIDTH, SCREEN_HEIGHT, MIN_CELL_SIZE, MAX_CELL_SIZE, HEADER_HEIGHT
+        SCREEN_WIDTH = WINDOWED_WIDTH
+        SCREEN_HEIGHT = WINDOWED_HEIGHT
+        MIN_CELL_SIZE = max(20, int(SCREEN_HEIGHT * 0.025))
+        MAX_CELL_SIZE = max(40, int(SCREEN_HEIGHT * 0.06))
+        HEADER_HEIGHT = int(SCREEN_HEIGHT * 0.12)
         
         # Game settings
         self.board_size = 10
@@ -500,92 +518,141 @@ class Minesweeper:
         self._setup_ui()
         
         # Fonts - scaled to screen size
-        base_size = int(SCREEN_HEIGHT / 15)
+        self._setup_fonts()
+    
+    def _setup_fonts(self):
+        """Setup fonts based on current screen size."""
+        current_height = self.screen.get_height()
+        base_size = int(current_height / 15)
         self.title_font = pygame.font.Font(None, int(base_size * 1.5))
         self.header_font = pygame.font.Font(None, base_size)
         self.text_font = pygame.font.Font(None, int(base_size * 0.7))
         self.cell_font = pygame.font.Font(None, int(base_size * 0.75))
         self.small_font = pygame.font.Font(None, int(base_size * 0.5))
     
+    def _toggle_fullscreen(self):
+        """Toggle between fullscreen and windowed mode."""
+        self.is_fullscreen = not self.is_fullscreen
+        if self.is_fullscreen:
+            self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN)
+        else:
+            self.screen = pygame.display.set_mode(self.windowed_size, pygame.RESIZABLE)
+        self._setup_fonts()
+        self._setup_ui()
+    
     def _setup_ui(self):
-        center_x = SCREEN_WIDTH // 2
-        btn_width = int(SCREEN_WIDTH * 0.15)
-        btn_height = int(SCREEN_HEIGHT * 0.06)
-        small_btn_height = int(SCREEN_HEIGHT * 0.045)
-        font_size = int(SCREEN_HEIGHT * 0.028)
-        small_font_size = int(SCREEN_HEIGHT * 0.022)
+        # Get current screen dimensions (works for both windowed and fullscreen)
+        current_width = self.screen.get_width()
+        current_height = self.screen.get_height()
         
-        # Menu buttons - positioned relative to screen
-        menu_start_y = int(SCREEN_HEIGHT * 0.35)
-        menu_spacing = int(SCREEN_HEIGHT * 0.08)
+        center_x = current_width // 2
+        btn_width = int(current_width * 0.18)
+        btn_height = int(current_height * 0.055)
+        small_btn_height = int(current_height * 0.04)
+        font_size = int(current_height * 0.03)
+        small_font_size = int(current_height * 0.022)
+        
+        # Menu buttons - positioned relative to screen with better spacing
+        menu_start_y = int(current_height * 0.28)
+        menu_spacing = int(current_height * 0.09)
+        fullscreen_text = "Exit Fullscreen" if self.is_fullscreen else "Enter Fullscreen"
         self.menu_buttons = {
             "play": Button(center_x - btn_width//2, menu_start_y, btn_width, btn_height, "Play", font_size),
             "leaderboard": Button(center_x - btn_width//2, menu_start_y + menu_spacing, btn_width, btn_height, "Leaderboard", font_size),
             "settings": Button(center_x - btn_width//2, menu_start_y + menu_spacing*2, btn_width, btn_height, "Settings", font_size),
-            "quit": Button(center_x - btn_width//2, menu_start_y + menu_spacing*3, btn_width, btn_height, "Quit", font_size)
+            "fullscreen": Button(center_x - btn_width//2, menu_start_y + menu_spacing*3, btn_width, small_btn_height, fullscreen_text, small_font_size),
+            "quit": Button(center_x - btn_width//2, menu_start_y + menu_spacing*4, btn_width, btn_height, "Quit", font_size)
         }
         
-        # Settings sliders
-        slider_width = int(SCREEN_WIDTH * 0.25)
-        self.size_slider = Slider(center_x - slider_width//2, int(SCREEN_HEIGHT * 0.3), slider_width, 5, 25, self.board_size, "Board Size")
-        self.mines_slider = Slider(center_x - slider_width//2, int(SCREEN_HEIGHT * 0.4), slider_width, 5, 200, self.num_mines, "Number of Mines")
+        # Settings sliders - repositioned
+        slider_width = int(current_width * 0.25)
+        self.size_slider = Slider(center_x - slider_width//2, int(current_height * 0.28), slider_width, 5, 25, self.board_size, "Board Size")
+        self.mines_slider = Slider(center_x - slider_width//2, int(current_height * 0.35), slider_width, 5, 200, self.num_mines, "Number of Mines")
         
-        # Settings buttons
-        preset_btn_width = int(SCREEN_WIDTH * 0.12)
-        preset_y = int(SCREEN_HEIGHT * 0.5)
+        # Settings buttons - repositioned
+        preset_btn_width = int(current_width * 0.12)
+        preset_y = int(current_height * 0.47)
         self.settings_buttons = {
-            "back": Button(center_x - btn_width//2, int(SCREEN_HEIGHT * 0.75), btn_width, btn_height, "Back to Menu", font_size),
+            "back": Button(center_x - btn_width//2, int(current_height * 0.87), btn_width, btn_height, "Back to Menu", font_size),
             "beginner": Button(center_x - int(preset_btn_width*1.7), preset_y, preset_btn_width, small_btn_height, "Beginner (9x9)", small_font_size),
             "intermediate": Button(center_x - preset_btn_width//2, preset_y, preset_btn_width, small_btn_height, "Intermediate (16x16)", small_font_size),
             "expert": Button(center_x + int(preset_btn_width*0.7), preset_y, preset_btn_width, small_btn_height, "Expert (22x22)", small_font_size),
         }
         
-        # Theme buttons - two rows for more themes
+        # Theme buttons - arranged in a scrollable grid with better layout
         self.theme_buttons = {}
         theme_names = list(THEMES.keys())
-        theme_btn_width = int(SCREEN_WIDTH * 0.06)
-        theme_btn_height = int(SCREEN_HEIGHT * 0.04)
-        themes_per_row = 5
-        theme_start_y = int(SCREEN_HEIGHT * 0.58)
+        theme_btn_width = int(current_width * 0.09)
+        theme_btn_height = int(current_height * 0.035)
+        themes_per_row = 4
+        theme_start_x = center_x - (themes_per_row * theme_btn_width + (themes_per_row - 1) * 10) // 2
+        theme_start_y = int(current_height * 0.55)
         
         for i, name in enumerate(theme_names):
             row = i // themes_per_row
             col = i % themes_per_row
-            total_in_row = min(themes_per_row, len(theme_names) - row * themes_per_row)
-            row_start_x = center_x - (total_in_row * (theme_btn_width + 10)) // 2
-            x = row_start_x + col * (theme_btn_width + 10)
-            y = theme_start_y + row * (theme_btn_height + 10)
+            x = theme_start_x + col * (theme_btn_width + 10)
+            y = theme_start_y + row * (theme_btn_height + 8)
             self.theme_buttons[name] = Button(x, y, theme_btn_width, theme_btn_height, name, small_font_size)
         
         # Game buttons
-        game_btn_width = int(SCREEN_WIDTH * 0.08)
-        game_btn_height = int(SCREEN_HEIGHT * 0.045)
+        game_btn_width = int(current_width * 0.08)
+        game_btn_height = int(current_height * 0.045)
         self.game_buttons = {
-            "menu": Button(int(SCREEN_WIDTH * 0.02), int(SCREEN_HEIGHT * 0.02), game_btn_width, game_btn_height, "Menu", small_font_size),
-            "restart": Button(int(SCREEN_WIDTH * 0.02) + game_btn_width + 10, int(SCREEN_HEIGHT * 0.02), game_btn_width, game_btn_height, "Restart", small_font_size)
+            "menu": Button(int(current_width * 0.02), int(current_height * 0.02), game_btn_width, game_btn_height, "Menu", small_font_size),
+            "restart": Button(int(current_width * 0.02) + game_btn_width + 10, int(current_height * 0.02), game_btn_width, game_btn_height, "Restart", small_font_size)
         }
         
         # Leaderboard buttons
         self.lb_buttons = {
-            "back": Button(center_x - btn_width//2, SCREEN_HEIGHT - int(SCREEN_HEIGHT * 0.12), btn_width, btn_height, "Back to Menu", font_size),
-            "clear": Button(center_x - btn_width//2, SCREEN_HEIGHT - int(SCREEN_HEIGHT * 0.19), btn_width, small_btn_height, "Clear Leaderboard", small_font_size),
-            "prev": Button(center_x - int(SCREEN_WIDTH * 0.18), int(SCREEN_HEIGHT * 0.18), int(SCREEN_WIDTH * 0.08), small_btn_height, "< Prev", small_font_size),
-            "next": Button(center_x + int(SCREEN_WIDTH * 0.1), int(SCREEN_HEIGHT * 0.18), int(SCREEN_WIDTH * 0.08), small_btn_height, "Next >", small_font_size)
+            "back": Button(center_x - btn_width//2, current_height - int(current_height * 0.12), btn_width, btn_height, "Back to Menu", font_size),
+            "clear": Button(center_x - btn_width//2, current_height - int(current_height * 0.19), btn_width, small_btn_height, "Clear Leaderboard", small_font_size),
+            "prev": Button(center_x - int(current_width * 0.18), int(current_height * 0.18), int(current_width * 0.08), small_btn_height, "< Prev", small_font_size),
+            "next": Button(center_x + int(current_width * 0.1), int(current_height * 0.18), int(current_width * 0.08), small_btn_height, "Next >", small_font_size)
         }
         self.current_lb_index = 0
         
         # Win/Lose buttons
-        end_btn_width = int(SCREEN_WIDTH * 0.15)
+        end_btn_width = int(current_width * 0.15)
         self.end_buttons = {
-            "menu": Button(center_x - end_btn_width - 10, int(SCREEN_HEIGHT * 0.45), end_btn_width, btn_height, "Main Menu", font_size),
-            "restart": Button(center_x + 10, int(SCREEN_HEIGHT * 0.45), end_btn_width, btn_height, "Play Again", font_size)
+            "menu": Button(center_x - end_btn_width - 10, int(current_height * 0.45), end_btn_width, btn_height, "Main Menu", font_size),
+            "restart": Button(center_x + 10, int(current_height * 0.45), end_btn_width, btn_height, "Play Again", font_size)
         }
         
         # Name input rect
-        self.name_input_rect = pygame.Rect(center_x - btn_width//2, int(SCREEN_HEIGHT * 0.22), btn_width, small_btn_height)
+        self.name_input_rect = pygame.Rect(center_x - btn_width//2, int(current_height * 0.22), btn_width, small_btn_height)
     
     def _get_theme(self) -> dict:
         return THEMES[self.current_theme]
+    
+    def _toggle_fullscreen(self):
+        """Toggle between fullscreen and windowed mode."""
+        global SCREEN_WIDTH, SCREEN_HEIGHT, MIN_CELL_SIZE, MAX_CELL_SIZE, HEADER_HEIGHT
+        
+        self.is_fullscreen = not self.is_fullscreen
+        
+        if self.is_fullscreen:
+            self.screen = pygame.display.set_mode((FULLSCREEN_WIDTH, FULLSCREEN_HEIGHT), pygame.FULLSCREEN)
+            SCREEN_WIDTH = FULLSCREEN_WIDTH
+            SCREEN_HEIGHT = FULLSCREEN_HEIGHT
+        else:
+            self.screen = pygame.display.set_mode((WINDOWED_WIDTH, WINDOWED_HEIGHT), pygame.RESIZABLE)
+            SCREEN_WIDTH = WINDOWED_WIDTH
+            SCREEN_HEIGHT = WINDOWED_HEIGHT
+        
+        # Update size-dependent constants
+        MIN_CELL_SIZE = max(20, int(SCREEN_HEIGHT * 0.025))
+        MAX_CELL_SIZE = max(40, int(SCREEN_HEIGHT * 0.06))
+        HEADER_HEIGHT = int(SCREEN_HEIGHT * 0.12)
+        
+        # Recreate UI elements and fonts for new size
+        self._setup_ui()
+        base_size = int(SCREEN_HEIGHT / 15)
+        self.title_font = pygame.font.Font(None, int(base_size * 1.5))
+        self.header_font = pygame.font.Font(None, base_size)
+        self.text_font = pygame.font.Font(None, int(base_size * 0.7))
+        self.cell_font = pygame.font.Font(None, int(base_size * 0.75))
+        self.small_font = pygame.font.Font(None, int(base_size * 0.5))
     
     def _get_leaderboard_file(self, size: int, mines: int) -> str:
         return os.path.join(self.leaderboard_dir, f"leaderboard_{size}x{size}_{mines}mines.txt")
@@ -779,8 +846,12 @@ class Minesweeper:
     
     def _calculate_board_dimensions(self) -> Tuple[int, int, int, int]:
         """Calculate board position and cell size to fit the screen."""
-        available_width = SCREEN_WIDTH - 40
-        available_height = SCREEN_HEIGHT - HEADER_HEIGHT - 40
+        current_width = self.screen.get_width()
+        current_height = self.screen.get_height()
+        current_header_height = int(current_height * 0.12)
+        
+        available_width = current_width - 40
+        available_height = current_height - current_header_height - 40
         
         cell_size = min(available_width // self.board_size, available_height // self.board_size)
         cell_size = max(MIN_CELL_SIZE, min(MAX_CELL_SIZE, cell_size))
@@ -788,8 +859,8 @@ class Minesweeper:
         board_width = cell_size * self.board_size
         board_height = cell_size * self.board_size
         
-        board_x = (SCREEN_WIDTH - board_width) // 2
-        board_y = HEADER_HEIGHT + (available_height - board_height) // 2
+        board_x = (current_width - board_width) // 2
+        board_y = current_header_height + (available_height - board_height) // 2
         
         return board_x, board_y, cell_size, board_width
     
@@ -958,27 +1029,32 @@ class Minesweeper:
     
     def _draw_menu(self):
         theme = self._get_theme()
+        current_width = self.screen.get_width()
+        current_height = self.screen.get_height()
+        
         self.screen.fill(theme["background"])
         
-        # Title
+        # Title - positioned at top
         title = self.title_font.render("MINESWEEPER", True, theme["text"])
-        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.15)))
+        title_rect = title.get_rect(center=(current_width // 2, int(current_height * 0.10)))
         self.screen.blit(title, title_rect)
         
         # Subtitle
         subtitle = self.text_font.render("A classic puzzle game", True, theme["text"])
-        subtitle_rect = subtitle.get_rect(center=(SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.22)))
+        subtitle_rect = subtitle.get_rect(center=(current_width // 2, int(current_height * 0.16)))
         self.screen.blit(subtitle, subtitle_rect)
         
         # Draw buttons
         for button in self.menu_buttons.values():
             button.draw(self.screen, theme)
         
-        # Draw player name input
+        # Draw player name input section - positioned at bottom
+        name_section_y = int(current_height * 0.78)
         name_label = self.text_font.render("Player Name:", True, theme["text"])
-        self.screen.blit(name_label, (SCREEN_WIDTH // 2 - int(SCREEN_WIDTH * 0.08), int(SCREEN_HEIGHT * 0.72)))
+        name_label_rect = name_label.get_rect(center=(current_width // 2, name_section_y))
+        self.screen.blit(name_label, name_label_rect)
         
-        name_input_rect = pygame.Rect(SCREEN_WIDTH // 2 - int(SCREEN_WIDTH * 0.08), int(SCREEN_HEIGHT * 0.76), int(SCREEN_WIDTH * 0.16), int(SCREEN_HEIGHT * 0.045))
+        name_input_rect = pygame.Rect(current_width // 2 - int(current_width * 0.08), name_section_y + int(current_height * 0.03), int(current_width * 0.16), int(current_height * 0.04))
         input_color = theme["button_hover"] if self.name_input_active else theme["button"]
         pygame.draw.rect(self.screen, input_color, name_input_rect, border_radius=5)
         pygame.draw.rect(self.screen, theme["border"], name_input_rect, 2, border_radius=5)
@@ -988,26 +1064,36 @@ class Minesweeper:
         name_text_rect = name_surface.get_rect(center=name_input_rect.center)
         self.screen.blit(name_surface, name_text_rect)
         
-        # Current settings display
-        settings_text = self.small_font.render(f"Board: {self.board_size}x{self.board_size} | Mines: {self.num_mines} | Theme: {self.current_theme}", True, theme["text"])
-        settings_rect = settings_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - int(SCREEN_HEIGHT * 0.05)))
-        self.screen.blit(settings_text, settings_rect)
+        # Current settings display - at the very bottom
+        settings_y = int(current_height * 0.90)
+        settings_line1 = self.small_font.render(f"Board: {self.board_size}x{self.board_size} | Mines: {self.num_mines} | Theme: {self.current_theme}", True, theme["text"])
+        settings1_rect = settings_line1.get_rect(center=(current_width // 2, settings_y))
+        self.screen.blit(settings_line1, settings1_rect)
+        
+        mode_text = "Fullscreen" if self.is_fullscreen else "Windowed"
+        settings_line2 = self.small_font.render(f"Display Mode: {mode_text} | Press F11 to toggle", True, theme["text"])
+        settings2_rect = settings_line2.get_rect(center=(current_width // 2, settings_y + int(current_height * 0.04)))
+        self.screen.blit(settings_line2, settings2_rect)
     
     def _draw_settings(self):
         theme = self._get_theme()
+        current_width = self.screen.get_width()
+        current_height = self.screen.get_height()
+        
         self.screen.fill(theme["background"])
         
         # Title
         title = self.header_font.render("Settings", True, theme["text"])
-        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.1)))
+        title_rect = title.get_rect(center=(current_width // 2, int(current_height * 0.08)))
         self.screen.blit(title, title_rect)
         
-        # Player name input
+        # Player name input - at the top
         name_label = self.text_font.render("Player Name:", True, theme["text"])
-        self.screen.blit(name_label, (SCREEN_WIDTH // 2 - int(SCREEN_WIDTH * 0.08), int(SCREEN_HEIGHT * 0.16)))
+        name_label_rect = name_label.get_rect(center=(current_width // 2, int(current_height * 0.14)))
+        self.screen.blit(name_label, name_label_rect)
         
         input_color = theme["button_hover"] if self.name_input_active else theme["button"]
-        name_rect = pygame.Rect(SCREEN_WIDTH // 2 - int(SCREEN_WIDTH * 0.08), int(SCREEN_HEIGHT * 0.2), int(SCREEN_WIDTH * 0.16), int(SCREEN_HEIGHT * 0.045))
+        name_rect = pygame.Rect(current_width // 2 - int(current_width * 0.08), int(current_height * 0.18), int(current_width * 0.16), int(current_height * 0.04))
         pygame.draw.rect(self.screen, input_color, name_rect, border_radius=5)
         pygame.draw.rect(self.screen, theme["border"], name_rect, 2, border_radius=5)
         self.name_input_rect = name_rect
@@ -1016,7 +1102,11 @@ class Minesweeper:
         name_text_rect = name_surface.get_rect(center=name_rect.center)
         self.screen.blit(name_surface, name_text_rect)
         
-        # Sliders
+        # Sliders section
+        slider_label = self.text_font.render("Board Configuration", True, theme["text"])
+        slider_label_rect = slider_label.get_rect(center=(current_width // 2, int(current_height * 0.25)))
+        self.screen.blit(slider_label, slider_label_rect)
+        
         self.size_slider.draw(self.screen, theme)
         self.mines_slider.draw(self.screen, theme)
         
@@ -1026,32 +1116,47 @@ class Minesweeper:
         if self.mines_slider.value > self.mines_slider.max_val:
             self.mines_slider.value = self.mines_slider.max_val
         
-        # Preset buttons label
-        preset_label = self.text_font.render("Presets:", True, theme["text"])
-        self.screen.blit(preset_label, (SCREEN_WIDTH // 2 - int(SCREEN_WIDTH * 0.03), int(SCREEN_HEIGHT * 0.46)))
+        # Preset buttons section
+        preset_label = self.text_font.render("Quick Presets", True, theme["text"])
+        preset_label_rect = preset_label.get_rect(center=(current_width // 2, int(current_height * 0.43)))
+        self.screen.blit(preset_label, preset_label_rect)
         
-        for button in self.settings_buttons.values():
-            button.draw(self.screen, theme)
+        for button_name, button in self.settings_buttons.items():
+            if button_name != "back":
+                button.draw(self.screen, theme)
         
-        # Theme selection label
-        theme_label = self.text_font.render("Theme:", True, theme["text"])
-        self.screen.blit(theme_label, (SCREEN_WIDTH // 2 - int(SCREEN_WIDTH * 0.025), int(SCREEN_HEIGHT * 0.54)))
+        # Theme selection section - with current theme highlighted
+        theme_label = self.text_font.render(f"Theme: {self.current_theme}", True, theme["text"])
+        theme_label_rect = theme_label.get_rect(center=(current_width // 2, int(current_height * 0.52)))
+        self.screen.blit(theme_label, theme_label_rect)
         
+        # Draw theme buttons in a grid
         for name, button in self.theme_buttons.items():
-            # Highlight current theme
+            # Highlight current theme with a border
             if name == self.current_theme:
-                highlight_rect = button.rect.inflate(6, 6)
-                pygame.draw.rect(self.screen, theme["text"], highlight_rect, 3, border_radius=12)
+                highlight_rect = button.rect.inflate(4, 4)
+                pygame.draw.rect(self.screen, theme["cell_flag"], highlight_rect, 3, border_radius=8)
             button.draw(self.screen, theme)
+        
+        # Back button at the bottom
+        self.settings_buttons["back"].draw(self.screen, theme)
+        
+        # Help text at bottom
+        help_text = self.small_font.render("Click theme buttons to preview | Use sliders or presets to configure board", True, theme["text"])
+        help_rect = help_text.get_rect(center=(current_width // 2, current_height - int(current_height * 0.03)))
+        self.screen.blit(help_text, help_rect)
     
     def _draw_game(self):
         theme = self._get_theme()
+        current_width = self.screen.get_width()
+        current_height = self.screen.get_height()
+        current_header_height = int(current_height * 0.12)
         mouse_pos = pygame.mouse.get_pos()
         
         self.screen.fill(theme["background"])
         
         # Header background
-        pygame.draw.rect(self.screen, theme["header"], (0, 0, SCREEN_WIDTH, HEADER_HEIGHT - 10))
+        pygame.draw.rect(self.screen, theme["header"], (0, 0, current_width, current_header_height - 10))
         
         # Draw game buttons
         for button in self.game_buttons.values():
@@ -1063,13 +1168,13 @@ class Minesweeper:
         else:
             current_time = self.elapsed_time
         
-        time_text = self.header_font.render(f"⏱ {current_time:.1f}s", True, theme["text"])
-        self.screen.blit(time_text, (SCREEN_WIDTH // 2 - int(SCREEN_WIDTH * 0.05), int(SCREEN_HEIGHT * 0.03)))
+        time_text = self.header_font.render(f"Time: {current_time:.1f}s", True, theme["text"])
+        self.screen.blit(time_text, (SCREEN_WIDTH // 2 - int(SCREEN_WIDTH * 0.06), int(SCREEN_HEIGHT * 0.03)))
         
         # Mines counter
         remaining = self.num_mines - self.flags_placed
-        mines_text = self.header_font.render(f"💣 {remaining}", True, theme["text"])
-        self.screen.blit(mines_text, (SCREEN_WIDTH - int(SCREEN_WIDTH * 0.12), int(SCREEN_HEIGHT * 0.03)))
+        mines_text = self.header_font.render(f"Mines: {remaining}", True, theme["text"])
+        self.screen.blit(mines_text, (SCREEN_WIDTH - int(SCREEN_WIDTH * 0.14), int(SCREEN_HEIGHT * 0.03)))
         
         # Board info
         info_text = self.small_font.render(f"{self.board_size}x{self.board_size} • {self.num_mines} mines", True, theme["text"])
@@ -1099,10 +1204,10 @@ class Minesweeper:
         
         # Title
         if self.state == GameState.WON:
-            title = self.header_font.render("🎉 YOU WON! 🎉", True, (50, 205, 50))
+            title = self.header_font.render("*** YOU WON! ***", True, (50, 205, 50))
             time_text = self.text_font.render(f"Time: {self.elapsed_time:.2f} seconds", True, theme["text"])
         else:
-            title = self.header_font.render("💥 GAME OVER 💥", True, (255, 99, 71))
+            title = self.header_font.render("*** GAME OVER ***", True, (255, 99, 71))
             time_text = self.text_font.render("Better luck next time!", True, theme["text"])
         
         title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.25)))
@@ -1122,17 +1227,20 @@ class Minesweeper:
     
     def _draw_leaderboard(self):
         theme = self._get_theme()
+        current_width = self.screen.get_width()
+        current_height = self.screen.get_height()
+        
         self.screen.fill(theme["background"])
         
         # Title
         title = self.header_font.render("Leaderboard", True, theme["text"])
-        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.08)))
+        title_rect = title.get_rect(center=(current_width // 2, int(current_height * 0.08)))
         self.screen.blit(title, title_rect)
         
         configs = self._get_all_leaderboard_configs()
         if not configs:
             no_data = self.text_font.render("No leaderboard data yet!", True, theme["text"])
-            no_data_rect = no_data.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+            no_data_rect = no_data.get_rect(center=(current_width // 2, current_height // 2))
             self.screen.blit(no_data, no_data_rect)
         else:
             self._draw_leaderboard_content(configs, theme)
@@ -1143,13 +1251,16 @@ class Minesweeper:
     
     def _draw_leaderboard_content(self, configs: List[Tuple[int, int]], theme: dict):
         """Draw the leaderboard content when there are entries."""
+        current_width = self.screen.get_width()
+        current_height = self.screen.get_height()
+        
         # Ensure index is valid
         self.current_lb_index = max(0, min(self.current_lb_index, len(configs) - 1))
         size, mines = configs[self.current_lb_index]
         
         # Config selector
         config_text = self.text_font.render(f"{size}x{size} - {mines} mines", True, theme["text"])
-        config_rect = config_text.get_rect(center=(SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.15)))
+        config_rect = config_text.get_rect(center=(current_width // 2, int(current_height * 0.15)))
         self.screen.blit(config_text, config_rect)
         
         # Navigation buttons
@@ -1159,20 +1270,20 @@ class Minesweeper:
         
         # Page indicator
         page_text = self.small_font.render(f"{self.current_lb_index + 1} / {len(configs)}", True, theme["text"])
-        page_rect = page_text.get_rect(center=(SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.22)))
+        page_rect = page_text.get_rect(center=(current_width // 2, int(current_height * 0.22)))
         self.screen.blit(page_text, page_rect)
         
         # Leaderboard entries
         entries = self._load_leaderboard(size, mines)
         
         # Table header
-        header_y = int(SCREEN_HEIGHT * 0.28)
+        header_y = int(current_height * 0.28)
         headers = ["Rank", "Name", "Time", "Date"]
         positions = [
-            SCREEN_WIDTH // 2 - int(SCREEN_WIDTH * 0.2),
-            SCREEN_WIDTH // 2 - int(SCREEN_WIDTH * 0.08),
-            SCREEN_WIDTH // 2 + int(SCREEN_WIDTH * 0.04),
-            SCREEN_WIDTH // 2 + int(SCREEN_WIDTH * 0.14)
+            current_width // 2 - int(current_width * 0.2),
+            current_width // 2 - int(current_width * 0.08),
+            current_width // 2 + int(current_width * 0.04),
+            current_width // 2 + int(current_width * 0.14)
         ]
         
         for header, pos in zip(headers, positions):
@@ -1184,7 +1295,9 @@ class Minesweeper:
     def _draw_leaderboard_entries(self, entries: List[LeaderboardEntry], header_y: int, 
                                    positions: List[int], theme: dict):
         """Draw individual leaderboard entries."""
-        row_height = int(SCREEN_HEIGHT * 0.04)
+        current_width = self.screen.get_width()
+        current_height = self.screen.get_height()
+        row_height = int(current_height * 0.04)
         
         if entries:
             for i, entry in enumerate(entries):
@@ -1202,7 +1315,7 @@ class Minesweeper:
                 self.screen.blit(date_text, (positions[3], y))
         else:
             no_entries = self.text_font.render("No entries yet for this configuration", True, theme["text"])
-            no_entries_rect = no_entries.get_rect(center=(SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.4)))
+            no_entries_rect = no_entries.get_rect(center=(current_width // 2, int(current_height * 0.4)))
             self.screen.blit(no_entries, no_entries_rect)
     
     def _handle_menu_events(self, event: pygame.event.Event):
@@ -1221,6 +1334,11 @@ class Minesweeper:
                 self.player_name += event.unicode
             return
         
+        # Handle F11 key for fullscreen toggle
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
+            self._toggle_fullscreen()
+            return
+        
         if self.menu_buttons["play"].handle_event(event):
             self._create_board()
             self.state = GameState.PLAYING
@@ -1228,6 +1346,8 @@ class Minesweeper:
             self.state = GameState.LEADERBOARD
         elif self.menu_buttons["settings"].handle_event(event):
             self.state = GameState.SETTINGS
+        elif self.menu_buttons["fullscreen"].handle_event(event):
+            self._toggle_fullscreen()
         elif self.menu_buttons["quit"].handle_event(event):
             pygame.quit()
             exit()
@@ -1332,6 +1452,14 @@ class Minesweeper:
                             running = False
                         else:
                             self.state = GameState.MENU
+                    elif event.key == pygame.K_F11:
+                        self._toggle_fullscreen()
+                elif event.type == pygame.VIDEORESIZE:
+                    # Handle window resize in windowed mode
+                    if not self.is_fullscreen:
+                        self.windowed_size = (event.w, event.h)
+                        self._setup_fonts()
+                        self._setup_ui()
                 
                 # Handle events based on state
                 self._dispatch_event(event)
