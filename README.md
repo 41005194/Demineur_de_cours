@@ -19,13 +19,15 @@ Un jeu de démineur moderne et personnalisable avec animations, thèmes colorés
 
 ## 🚀 Installation
 
-1. Clonez le dépôt :
+Clonez le dépôt :
+
 ```bash
 git clone https://github.com/VOTRE_USERNAME/Demineur.git
 cd Demineur
 ```
 
-2. Installez les dépendances :
+Installez les dépendances :
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -33,6 +35,7 @@ pip install -r requirements.txt
 ## 🎮 Utilisation
 
 Lancez le jeu :
+
 ```bash
 python minesweeper.py
 ```
@@ -63,6 +66,7 @@ Format : `leaderboard_{taille}x{taille}_{mines}mines.txt`
 Le jeu propose **21 thèmes** colorés avec des palettes uniques :
 
 ### Thèmes Originaux
+
 1. **Ocean** - Tons bleus classiques
 2. **Forest** - Thème nature vert
 3. **Sunset** - Tons chauds rouge/rose
@@ -70,29 +74,34 @@ Le jeu propose **21 thèmes** colorés avec des palettes uniques :
 5. **Midnight** - Mode sombre
 
 ### Thèmes Cyberpunk & Tech
-6. **Neon** - Cyberpunk avec couleurs lumineuses
-7. **Matrix** - Vert style Matrix avec cellules révélées sombres
-8. **Cyber** - Bleu cyberpunk futuriste
+
+1. **Neon** - Cyberpunk avec couleurs lumineuses
+2. **Matrix** - Vert style Matrix avec cellules révélées sombres
+3. **Cyber** - Bleu cyberpunk futuriste
 
 ### Thèmes Rétro & Classiques
-9. **Retro** - Tons gris classiques
-10. **Slate** - Ardoise gris-bleu avec cellules révélées colorées
+
+1. **Retro** - Tons gris classiques
+2. **Slate** - Ardoise gris-bleu avec cellules révélées colorées
 
 ### Thèmes Nature
-11. **Aurora** - Gradient bleu/cyan aurore boréale
-12. **Lava** - Thème volcanique orange/rouge
-13. **Ice** - Thème glacé bleu/blanc
-14. **Desert** - Tons sable/beige chaleureux
-15. **Emerald** - Vert émeraude brillant
-16. **Jungle** - Vert jungle luxuriant
+
+1. **Aurora** - Gradient bleu/cyan aurore boréale
+2. **Lava** - Thème volcanique orange/rouge
+3. **Ice** - Thème glacé bleu/blanc
+4. **Desert** - Tons sable/beige chaleureux
+5. **Emerald** - Vert émeraude brillant
+6. **Jungle** - Vert jungle luxuriant
 
 ### Thèmes Métalliques & Précieux
-17. **Copper** - Cuivre/bronze avec cellules beiges
-18. **Galaxy** - Violet spatial avec cellules mauves
+
+1. **Copper** - Cuivre/bronze avec cellules beiges
+2. **Galaxy** - Violet spatial avec cellules mauves
 
 ### Thèmes Floraux & Doux
-19. **Cherry** - Rose/rouge cerise
-20. **Lavender** - Lavande doux
+
+1. **Cherry** - Rose/rouge cerise
+2. **Lavender** - Lavande doux
 
 Chaque thème a été conçu avec des couleurs harmonieuses et des cellules révélées **non-blanches** pour une expérience visuelle unique !
 
@@ -103,7 +112,7 @@ Chaque thème a été conçu avec des couleurs harmonieuses et des cellules rév
 
 ## 📝 Structure du projet
 
-```
+``` tree
 Demineur/
 ├── minesweeper.py       # Code principal du jeu
 ├── requirements.txt     # Dépendances Python
@@ -127,7 +136,7 @@ Ce projet est libre d'utilisation.
 
 ## 👤 Auteur
 
-Créé avec ❤️ pour les amateurs de démineur !
+Créé par Liam PROROVNER par dépit (à cause du démineur de google) !
 
 ## 🎯 Améliorations futures possibles
 
@@ -138,4 +147,4 @@ Créé avec ❤️ pour les amateurs de démineur !
 - [ ] Système de succès/achievements
 - [ ] Support de différentes langues
 
-**Bon jeu ! 💣🎮**
+## Bon jeu ! 💣🎮
