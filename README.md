@@ -57,16 +57,41 @@ Format : `leaderboard_{taille}x{taille}_{mines}mines.txt`
 
 ## 🎨 Thèmes disponibles
 
+Le jeu propose **21 thèmes** colorés avec des palettes uniques :
+
+### Thèmes Originaux
 1. **Ocean** - Tons bleus classiques
 2. **Forest** - Thème nature vert
 3. **Sunset** - Tons chauds rouge/rose
 4. **Candy** - Violet/rose vif
 5. **Midnight** - Mode sombre
+
+### Thèmes Cyberpunk & Tech
 6. **Neon** - Cyberpunk avec couleurs lumineuses
-7. **Retro** - Tons gris classiques
-8. **Aurora** - Gradient bleu/cyan
-9. **Lava** - Thème volcanique orange/rouge
-10. **Ice** - Thème glacé bleu/blanc
+7. **Matrix** - Vert style Matrix avec cellules révélées sombres
+8. **Cyber** - Bleu cyberpunk futuriste
+
+### Thèmes Rétro & Classiques
+9. **Retro** - Tons gris classiques
+10. **Slate** - Ardoise gris-bleu avec cellules révélées colorées
+
+### Thèmes Nature
+11. **Aurora** - Gradient bleu/cyan aurore boréale
+12. **Lava** - Thème volcanique orange/rouge
+13. **Ice** - Thème glacé bleu/blanc
+14. **Desert** - Tons sable/beige chaleureux
+15. **Emerald** - Vert émeraude brillant
+16. **Jungle** - Vert jungle luxuriant
+
+### Thèmes Métalliques & Précieux
+17. **Copper** - Cuivre/bronze avec cellules beiges
+18. **Galaxy** - Violet spatial avec cellules mauves
+
+### Thèmes Floraux & Doux
+19. **Cherry** - Rose/rouge cerise
+20. **Lavender** - Lavande doux
+
+Chaque thème a été conçu avec des couleurs harmonieuses et des cellules révélées **non-blanches** pour une expérience visuelle unique !
 
 ## 🛠️ Technologies
 
