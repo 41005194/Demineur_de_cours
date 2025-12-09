@@ -14,6 +14,12 @@ from enum import Enum
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Dict
 
+# Import new modules
+from audio_manager import AudioManager
+from stats_manager import StatsManager
+from settings_manager import SettingsManager
+from menu_animation import ParallaxBackground, MenuAnimation, TextGlow
+
 # Initialize Pygame
 pygame.init()
 pygame.font.init()
@@ -553,6 +559,7 @@ class GameState(Enum):
     LOST = 4
     LEADERBOARD = 5
     SETTINGS = 6
+    ACHIEVEMENTS = 7
 
 
 @dataclass
@@ -661,6 +668,11 @@ class Slider:
 
 class Minesweeper:
     def __init__(self):
+        # Initialize managers
+        self.settings_mgr = SettingsManager()
+        self.stats_mgr = StatsManager()
+        self.audio_mgr = AudioManager(self.settings_mgr.get("volume", 0.7))
+        
         # Start in windowed mode
         self.is_fullscreen = False
         self.screen = pygame.display.set_mode((WINDOWED_WIDTH, WINDOWED_HEIGHT), pygame.RESIZABLE)
@@ -675,10 +687,11 @@ class Minesweeper:
         MAX_CELL_SIZE = max(40, int(SCREEN_HEIGHT * 0.06))
         HEADER_HEIGHT = int(SCREEN_HEIGHT * 0.12)
 
-        # Game settings
-        self.board_size = 10
-        self.num_mines = 15
-        self.current_theme = "Ocean"
+        # Game settings - load from settings manager
+        self.board_size = self.settings_mgr.get("board_size", 10)
+        self.num_mines = self.settings_mgr.get("num_mines", 15)
+        self.current_theme = self.settings_mgr.get("theme", "Ocean")
+        self.dark_mode = self.settings_mgr.get("dark_mode", False)
 
         # Game state
         self.state = GameState.MENU
@@ -692,15 +705,22 @@ class Minesweeper:
         # Animation tracking
         self.animations: Dict[Tuple[int, int], CellAnimation] = {}
         self.current_time = time.time()
+        
+        # Menu animations
+        self.parallax_bg = ParallaxBackground(WINDOWED_WIDTH, WINDOWED_HEIGHT)
+        self.menu_animation = MenuAnimation()
 
         # Player info
-        self.player_name = "Player"
+        self.player_name = self.settings_mgr.get("player_name", "Player")
         self.name_input_active = False
 
         # Leaderboard data directory
         self.data_dir = os.path.dirname(os.path.abspath(__file__))
         self.leaderboard_dir = os.path.join(self.data_dir, "leaderboards")
         os.makedirs(self.leaderboard_dir, exist_ok=True)
+        
+        # Achievements display
+        self.current_ach_index = 0
 
         # UI elements
         self._setup_ui()
@@ -734,51 +754,54 @@ class Minesweeper:
         current_height = self.screen.get_height()
 
         center_x = current_width // 2
-        btn_width = int(current_width * 0.18)
-        btn_height = int(current_height * 0.055)
-        small_btn_height = int(current_height * 0.04)
-        font_size = int(current_height * 0.03)
-        small_font_size = int(current_height * 0.022)
+        btn_width = int(current_width * 0.16)
+        btn_height = int(current_height * 0.048)
+        small_btn_height = int(current_height * 0.035)
+        font_size = int(current_height * 0.028)
+        small_font_size = int(current_height * 0.018)
 
         # Menu buttons - positioned relative to screen with better spacing
-        menu_start_y = int(current_height * 0.28)
-        menu_spacing = int(current_height * 0.09)
+        menu_start_y = int(current_height * 0.15)
+        menu_spacing = int(current_height * 0.065)
         fullscreen_text = "Exit Fullscreen" if self.is_fullscreen else "Enter Fullscreen"
         self.menu_buttons = {
             "play": Button(center_x - btn_width // 2, menu_start_y, btn_width, btn_height, "Play", font_size),
             "leaderboard": Button(
                 center_x - btn_width // 2, menu_start_y + menu_spacing, btn_width, btn_height, "Leaderboard", font_size
             ),
+            "achievements": Button(
+                center_x - btn_width // 2, menu_start_y + menu_spacing * 2, btn_width, btn_height, "Achievements", font_size
+            ),
             "settings": Button(
-                center_x - btn_width // 2, menu_start_y + menu_spacing * 2, btn_width, btn_height, "Settings", font_size
+                center_x - btn_width // 2, menu_start_y + menu_spacing * 3, btn_width, btn_height, "Settings", font_size
             ),
             "fullscreen": Button(
                 center_x - btn_width // 2,
-                menu_start_y + menu_spacing * 3,
+                menu_start_y + menu_spacing * 4,
                 btn_width,
                 small_btn_height,
                 fullscreen_text,
                 small_font_size,
             ),
-            "quit": Button(center_x - btn_width // 2, menu_start_y + menu_spacing * 4, btn_width, btn_height, "Quit", font_size),
+            "quit": Button(center_x - btn_width // 2, menu_start_y + menu_spacing * 5, btn_width, btn_height, "Quit", font_size),
         }
 
-        # Settings sliders - repositioned
+        # Settings sliders - repositioned with more space
         slider_width = int(current_width * 0.25)
         self.size_slider = Slider(
-            center_x - slider_width // 2, int(current_height * 0.28), slider_width, 5, 25, self.board_size, "Board Size"
+            center_x - slider_width // 2, int(current_height * 0.32), slider_width, 5, 25, self.board_size, "Board Size"
         )
         self.mines_slider = Slider(
-            center_x - slider_width // 2, int(current_height * 0.35), slider_width, 5, 200, self.num_mines, "Number of Mines"
+            center_x - slider_width // 2, int(current_height * 0.42), slider_width, 5, 200, self.num_mines, "Number of Mines"
         )
 
         # Settings buttons - repositioned
-        preset_btn_width = int(current_width * 0.12)
-        preset_y = int(current_height * 0.47)
+        preset_btn_width = int(current_width * 0.11)
+        preset_y = int(current_height * 0.53)
         self.settings_buttons = {
-            "back": Button(center_x - btn_width // 2, int(current_height * 0.87), btn_width, btn_height, "Back to Menu", font_size),
+            "back": Button(center_x - btn_width // 2, int(current_height * 0.88), btn_width, btn_height, "Back to Menu", font_size),
             "beginner": Button(
-                center_x - int(preset_btn_width * 1.7),
+                center_x - int(preset_btn_width * 1.75),
                 preset_y,
                 preset_btn_width,
                 small_btn_height,
@@ -794,7 +817,7 @@ class Minesweeper:
                 small_font_size,
             ),
             "expert": Button(
-                center_x + int(preset_btn_width * 0.7),
+                center_x + int(preset_btn_width * 0.75),
                 preset_y,
                 preset_btn_width,
                 small_btn_height,
@@ -806,18 +829,18 @@ class Minesweeper:
         # Theme buttons - arranged in a scrollable grid with better layout
         self.theme_buttons = {}
         theme_names = list(THEMES.keys())
-        theme_btn_width = int(current_width * 0.09)
-        theme_btn_height = int(current_height * 0.035)
-        themes_per_row = 4
-        theme_start_x = center_x - (themes_per_row * theme_btn_width + (themes_per_row - 1) * 10) // 2
-        theme_start_y = int(current_height * 0.55)
+        theme_btn_width = int(current_width * 0.085)
+        theme_btn_height = int(current_height * 0.032)
+        themes_per_row = 5
+        theme_start_x = center_x - (themes_per_row * theme_btn_width + (themes_per_row - 1) * 8) // 2
+        theme_start_y = int(current_height * 0.60)
 
         for i, name in enumerate(theme_names):
             row = i // themes_per_row
             col = i % themes_per_row
-            x = theme_start_x + col * (theme_btn_width + 10)
-            y = theme_start_y + row * (theme_btn_height + 8)
-            self.theme_buttons[name] = Button(x, y, theme_btn_width, theme_btn_height, name, small_font_size)
+            x = theme_start_x + col * (theme_btn_width + 8)
+            y = theme_start_y + row * (theme_btn_height + 6)
+            self.theme_buttons[name] = Button(x, y, theme_btn_width, theme_btn_height, name, int(small_font_size * 0.85))
 
         # Game buttons
         game_btn_width = int(current_width * 0.08)
@@ -840,7 +863,7 @@ class Minesweeper:
         self.lb_buttons = {
             "back": Button(
                 center_x - btn_width // 2,
-                current_height - int(current_height * 0.12),
+                int(current_height * 0.88),
                 btn_width,
                 btn_height,
                 "Back to Menu",
@@ -848,14 +871,14 @@ class Minesweeper:
             ),
             "clear": Button(
                 center_x - btn_width // 2,
-                current_height - int(current_height * 0.19),
+                int(current_height * 0.80),
                 btn_width,
                 small_btn_height,
                 "Clear Leaderboard",
                 small_font_size,
             ),
             "prev": Button(
-                center_x - int(current_width * 0.18),
+                int(current_width * 0.10),
                 int(current_height * 0.18),
                 int(current_width * 0.08),
                 small_btn_height,
@@ -863,7 +886,7 @@ class Minesweeper:
                 small_font_size,
             ),
             "next": Button(
-                center_x + int(current_width * 0.1),
+                int(current_width * 0.82),
                 int(current_height * 0.18),
                 int(current_width * 0.08),
                 small_btn_height,
@@ -886,7 +909,41 @@ class Minesweeper:
         self.name_input_rect = pygame.Rect(center_x - btn_width // 2, int(current_height * 0.22), btn_width, small_btn_height)
 
     def _get_theme(self) -> dict:
-        return THEMES[self.current_theme]
+        theme = THEMES[self.current_theme].copy()
+        
+        # Apply dark mode if enabled
+        if self.dark_mode:
+            theme = self._apply_dark_mode(theme)
+        
+        return theme
+    
+    def _apply_dark_mode(self, theme: dict) -> dict:
+        """Apply dark mode adjustment to theme colors with better contrast."""
+        darkened = theme.copy()
+        
+        # Darken backgrounds more substantially for dark mode
+        darkened["background"] = tuple(max(0, c - 50) for c in theme["background"])
+        darkened["header"] = tuple(max(0, c - 50) for c in theme["header"])
+        darkened["cell_revealed"] = tuple(max(0, c - 80) for c in theme["cell_revealed"])
+        darkened["cell_hidden"] = tuple(max(0, c - 40) for c in theme["cell_hidden"])
+        darkened["cell_hidden_hover"] = tuple(max(0, c - 40) for c in theme.get("cell_hidden_hover", theme["cell_hidden"]))
+        
+        # Make text much lighter for visibility on dark backgrounds
+        darkened["text"] = tuple(min(255, max(200, c + 120)) for c in theme.get("text", (200, 200, 200)))
+        darkened["text_dark"] = tuple(min(255, max(150, c + 100)) for c in theme.get("text_dark", (50, 50, 50)))
+        
+        # Enhance number colors for dark mode - make them brighter and more saturated
+        original_numbers = theme.get("numbers", [(0, 0, 0)] * 9)
+        darkened["numbers"] = []
+        for color in original_numbers:
+            # Increase brightness and saturation for numbers
+            enhanced = tuple(min(255, c + 80) for c in color)
+            darkened["numbers"].append(enhanced)
+        
+        # Ensure good contrast on buttons and borders
+        darkened["border"] = tuple(min(255, c + 60) for c in theme.get("border", (100, 100, 100)))
+        
+        return darkened
 
     def _toggle_fullscreen(self):
         """Toggle between fullscreen and windowed mode."""
@@ -1050,6 +1107,13 @@ class Minesweeper:
         if cell.is_mine:
             self.state = GameState.LOST
             self._reveal_all_mines()
+            # Record loss
+            self.audio_mgr.play("lose")
+            self.stats_mgr.record_game(
+                self.board_size, self.num_mines,
+                time.time() - self.start_time if self.start_time else 0,
+                False, self.flags_placed, self.cells_revealed
+            )
             return
 
         # Check win condition
@@ -1058,6 +1122,16 @@ class Minesweeper:
             self.state = GameState.WON
             self.elapsed_time = time.time() - self.start_time
             self._add_to_leaderboard(self.elapsed_time)
+            
+            # Record win
+            self.audio_mgr.play("win")
+            flags_correct = self._check_all_flags_correct()
+            no_flags_used = self.flags_placed == 0
+            self.stats_mgr.record_game(
+                self.board_size, self.num_mines, self.elapsed_time,
+                True, self.flags_placed, self.cells_revealed,
+                flags_correct, no_flags_used
+            )
             return
 
         # Flood fill for empty cells with cascading delay
@@ -1066,6 +1140,56 @@ class Minesweeper:
                 for dx in range(-1, 2):
                     if dx != 0 or dy != 0:
                         self._reveal_cell(x + dx, y + dy, delay + 0.03)
+
+    def _check_auto_reveal(self, x: int, y: int) -> bool:
+        """
+        Check if a numbered cell has all mines flagged correctly.
+        If yes, reveal all adjacent safe cells.
+        Returns True if auto-reveal was performed.
+        """
+        cell = self.board[y][x]
+        if cell.is_mine or not cell.is_revealed or cell.adjacent_mines == 0:
+            return False
+        
+        # Count adjacent flags and mines
+        adjacent_flags = 0
+        adjacent_unflagged_safe = []
+        
+        for dy in range(-1, 2):
+            for dx in range(-1, 2):
+                if dx == 0 and dy == 0:
+                    continue
+                    
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < self.board_size and 0 <= ny < self.board_size:
+                    adj_cell = self.board[ny][nx]
+                    
+                    if adj_cell.is_flagged:
+                        adjacent_flags += 1
+                    elif not adj_cell.is_revealed and not adj_cell.is_mine:
+                        adjacent_unflagged_safe.append((nx, ny))
+        
+        # If flags match adjacent mines and there are safe cells to reveal
+        if adjacent_flags == cell.adjacent_mines and adjacent_unflagged_safe:
+            # Reveal all adjacent unflagged safe cells
+            for nx, ny in adjacent_unflagged_safe:
+                self._reveal_cell(nx, ny)
+            return True
+        
+        return False
+
+    def _check_all_flags_correct(self) -> bool:
+        """Check if all flags are placed on actual mines and all mines are flagged."""
+        for y in range(self.board_size):
+            for x in range(self.board_size):
+                cell = self.board[y][x]
+                # If flagged, must be a mine
+                if cell.is_flagged and not cell.is_mine:
+                    return False
+                # If a mine, must be flagged
+                if cell.is_mine and not cell.is_flagged:
+                    return False
+        return True
 
     def _reveal_all_mines(self):
         delay = 0
@@ -1288,21 +1412,45 @@ class Minesweeper:
         current_width = self.screen.get_width()
         current_height = self.screen.get_height()
 
-        self.screen.fill(theme["background"])
+        # Update and draw parallax background
+        self.parallax_bg.update(0.016)  # ~60 FPS
+        self.parallax_bg.width = current_width
+        self.parallax_bg.height = current_height
+        self.parallax_bg.draw(self.screen, theme)
 
-        # Title - positioned at top
+        # Update menu animation
+        self.menu_animation.update()
+
+        # Title - positioned at top with animation
         title = self.title_font.render("MINESWEEPER", True, theme["text"])
         title_rect = title.get_rect(center=(current_width // 2, int(current_height * 0.10)))
+        
+        # Add bounce animation to title
+        bounce_offset = self.menu_animation.get_bounce_offset(title_rect.y, "title", 0)
+        title_rect.y += bounce_offset[1]
+        
         self.screen.blit(title, title_rect)
 
-        # Subtitle
+        # Subtitle with fade-in
         subtitle = self.text_font.render("A classic puzzle game", True, theme["text"])
         subtitle_rect = subtitle.get_rect(center=(current_width // 2, int(current_height * 0.16)))
+        alpha = int(255 * self.menu_animation.get_fade_alpha("subtitle"))
+        
         self.screen.blit(subtitle, subtitle_rect)
 
-        # Draw buttons
-        for button in self.menu_buttons.values():
+        # Draw buttons with animation
+        for i, (key, button) in enumerate(self.menu_buttons.items()):
+            # Store original position
+            original_y = button.rect.y
+            
+            # Apply bounce animation
+            bounce_offset = self.menu_animation.get_bounce_offset(button.rect.y, f"btn_{key}", i)
+            button.rect.y = original_y + bounce_offset[1]
+            
             button.draw(self.screen, theme)
+            
+            # Restore original position
+            button.rect.y = original_y
 
         # Draw player name input section - positioned at bottom
         name_section_y = int(current_height * 0.78)
@@ -1327,8 +1475,9 @@ class Minesweeper:
 
         # Current settings display - at the very bottom
         settings_y = int(current_height * 0.90)
+        dark_mode_text = " (Dark Mode)" if self.dark_mode else ""
         settings_line1 = self.small_font.render(
-            f"Board: {self.board_size}x{self.board_size} | Mines: {self.num_mines} | Theme: {self.current_theme}",
+            f"Board: {self.board_size}x{self.board_size} | Mines: {self.num_mines} | Theme: {self.current_theme}{dark_mode_text}",
             True,
             theme["text"],
         )
@@ -1349,20 +1498,20 @@ class Minesweeper:
 
         # Title
         title = self.header_font.render("Settings", True, theme["text"])
-        title_rect = title.get_rect(center=(current_width // 2, int(current_height * 0.08)))
+        title_rect = title.get_rect(center=(current_width // 2, int(current_height * 0.06)))
         self.screen.blit(title, title_rect)
 
         # Player name input - at the top
         name_label = self.text_font.render("Player Name:", True, theme["text"])
-        name_label_rect = name_label.get_rect(center=(current_width // 2, int(current_height * 0.14)))
+        name_label_rect = name_label.get_rect(center=(current_width // 2, int(current_height * 0.12)))
         self.screen.blit(name_label, name_label_rect)
 
         input_color = theme["button_hover"] if self.name_input_active else theme["button"]
         name_rect = pygame.Rect(
             current_width // 2 - int(current_width * 0.08),
-            int(current_height * 0.18),
+            int(current_height * 0.155),
             int(current_width * 0.16),
-            int(current_height * 0.04),
+            int(current_height * 0.035),
         )
         pygame.draw.rect(self.screen, input_color, name_rect, border_radius=5)
         pygame.draw.rect(self.screen, theme["border"], name_rect, 2, border_radius=5)
@@ -1372,9 +1521,29 @@ class Minesweeper:
         name_text_rect = name_surface.get_rect(center=name_rect.center)
         self.screen.blit(name_surface, name_text_rect)
 
+        # Dark mode toggle - on same row as name
+        dark_mode_label = self.text_font.render("Dark Mode:", True, theme["text"])
+        dark_mode_label_rect = dark_mode_label.get_rect(topleft=(int(current_width * 0.12), int(current_height * 0.22)))
+        self.screen.blit(dark_mode_label, dark_mode_label_rect)
+        
+        toggle_rect = pygame.Rect(
+            int(current_width * 0.28),
+            int(current_height * 0.217),
+            int(current_width * 0.06),
+            int(current_height * 0.035),
+        )
+        toggle_color = theme["cell_flag"] if self.dark_mode else theme["button"]
+        pygame.draw.rect(self.screen, toggle_color, toggle_rect, border_radius=5)
+        pygame.draw.rect(self.screen, theme["border"], toggle_rect, 2, border_radius=5)
+        self.dark_mode_toggle_rect = toggle_rect
+        
+        toggle_text = self.text_font.render("ON" if self.dark_mode else "OFF", True, theme["text"])
+        toggle_text_rect = toggle_text.get_rect(center=toggle_rect.center)
+        self.screen.blit(toggle_text, toggle_text_rect)
+
         # Sliders section
         slider_label = self.text_font.render("Board Configuration", True, theme["text"])
-        slider_label_rect = slider_label.get_rect(center=(current_width // 2, int(current_height * 0.25)))
+        slider_label_rect = slider_label.get_rect(center=(current_width // 2, int(current_height * 0.28)))
         self.screen.blit(slider_label, slider_label_rect)
 
         self.size_slider.draw(self.screen, theme)
@@ -1388,7 +1557,7 @@ class Minesweeper:
 
         # Preset buttons section
         preset_label = self.text_font.render("Quick Presets", True, theme["text"])
-        preset_label_rect = preset_label.get_rect(center=(current_width // 2, int(current_height * 0.43)))
+        preset_label_rect = preset_label.get_rect(center=(current_width // 2, int(current_height * 0.49)))
         self.screen.blit(preset_label, preset_label_rect)
 
         for button_name, button in self.settings_buttons.items():
@@ -1397,7 +1566,7 @@ class Minesweeper:
 
         # Theme selection section - with current theme highlighted
         theme_label = self.text_font.render(f"Theme: {self.current_theme}", True, theme["text"])
-        theme_label_rect = theme_label.get_rect(center=(current_width // 2, int(current_height * 0.52)))
+        theme_label_rect = theme_label.get_rect(center=(current_width // 2, int(current_height * 0.58)))
         self.screen.blit(theme_label, theme_label_rect)
 
         # Draw theme buttons in a grid
@@ -1591,6 +1760,134 @@ class Minesweeper:
             no_entries_rect = no_entries.get_rect(center=(current_width // 2, int(current_height * 0.4)))
             self.screen.blit(no_entries, no_entries_rect)
 
+    def _draw_achievements(self):
+        """Draw achievements screen."""
+        theme = self._get_theme()
+        current_width = self.screen.get_width()
+        current_height = self.screen.get_height()
+
+        self.screen.fill(theme["background"])
+
+        # Title and stats
+        title = self.title_font.render("ACHIEVEMENTS", True, theme["text"])
+        title_rect = title.get_rect(center=(current_width // 2, int(current_height * 0.05)))
+        self.screen.blit(title, title_rect)
+
+        # Stats
+        unlocked = self.stats_mgr.get_unlocked_count()
+        total = self.stats_mgr.get_total_count()
+        stats_text = self.text_font.render(f"Unlocked: {unlocked}/{total}", True, theme["text"])
+        stats_rect = stats_text.get_rect(center=(current_width // 2, int(current_height * 0.10)))
+        self.screen.blit(stats_text, stats_rect)
+
+        # Game stats
+        game_stats = self.stats_mgr.get_stats()
+        games_text = self.text_font.render(
+            f"Games: {game_stats['total_games']} | Wins: {game_stats['total_wins']} | Win Rate: {self.stats_mgr.get_win_rate():.1f}%",
+            True,
+            theme["text"],
+        )
+        games_rect = games_text.get_rect(center=(current_width // 2, int(current_height * 0.14)))
+        self.screen.blit(games_text, games_rect)
+
+        # Draw achievements list
+        achievements = self.stats_mgr.get_achievements()
+        ach_list = list(achievements.items())
+        
+        start_y = int(current_height * 0.20)
+        row_height = int(current_height * 0.08)
+        rows_per_screen = 5
+
+        for i in range(rows_per_screen):
+            idx = self.current_ach_index + i
+            if idx >= len(ach_list):
+                break
+
+            ach_id, ach = ach_list[idx]
+            y = start_y + i * row_height
+
+            # Achievement box
+            box_rect = pygame.Rect(
+                int(current_width * 0.05),
+                y,
+                int(current_width * 0.90),
+                int(row_height * 0.9),
+            )
+            
+            # Color based on unlock status
+            box_color = theme["cell_flag"] if ach.unlocked else theme["cell_hidden"]
+            pygame.draw.rect(self.screen, box_color, box_rect, border_radius=8)
+            pygame.draw.rect(self.screen, theme["border"], box_rect, 2, border_radius=8)
+
+            # Icon
+            icon = self.text_font.render(ach.icon, True, theme["text"])
+            self.screen.blit(icon, (int(current_width * 0.08), y + int(row_height * 0.15)))
+
+            # Name and description
+            name_color = theme["text"] if ach.unlocked else (100, 100, 100)
+            name = self.header_font.render(ach.name, True, name_color)
+            self.screen.blit(name, (int(current_width * 0.13), y + int(row_height * 0.10)))
+
+            desc = self.small_font.render(ach.description, True, name_color)
+            self.screen.blit(desc, (int(current_width * 0.13), y + int(row_height * 0.50)))
+
+            # Unlock date if unlocked
+            if ach.unlocked and ach.unlock_date:
+                date_text = self.small_font.render(f"Unlocked: {ach.unlock_date[:10]}", True, theme["cell_flag"])
+                self.screen.blit(date_text, (int(current_width * 0.70), y + int(row_height * 0.50)))
+
+        # Navigation buttons
+        button_y = int(current_height * 0.88)
+        button_width = int(current_width * 0.12)
+        button_height = int(current_height * 0.048)
+        small_font_size = int(current_height * 0.02)
+
+        # Back button
+        back_btn = Button(
+            int(current_width * 0.02),
+            button_y,
+            button_width,
+            button_height,
+            "Back",
+            small_font_size,
+        )
+        back_btn.draw(self.screen, theme)
+        self.ach_back_button = back_btn
+
+        # Navigation info
+        nav_text = self.small_font.render(
+            f"Achievements {self.current_ach_index + 1}-{min(self.current_ach_index + rows_per_screen, len(ach_list))} of {len(ach_list)}",
+            True,
+            theme["text"],
+        )
+        nav_rect = nav_text.get_rect(center=(current_width // 2, button_y + int(button_height * 0.4)))
+        self.screen.blit(nav_text, nav_rect)
+
+        # Prev/Next buttons
+        if self.current_ach_index > 0:
+            prev_btn = Button(
+                int(current_width * 0.10),
+                button_y,
+                int(current_width * 0.08),
+                button_height,
+                "← Prev",
+                int(small_font_size * 0.9),
+            )
+            prev_btn.draw(self.screen, theme)
+            self.ach_prev_button = prev_btn
+
+        if self.current_ach_index + rows_per_screen < len(ach_list):
+            next_btn = Button(
+                int(current_width * 0.82),
+                button_y,
+                int(current_width * 0.08),
+                button_height,
+                "Next →",
+                int(small_font_size * 0.9),
+            )
+            next_btn.draw(self.screen, theme)
+            self.ach_next_button = next_btn
+
     def _handle_menu_events(self, event: pygame.event.Event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.name_input_rect.collidepoint(event.pos):
@@ -1605,6 +1902,8 @@ class Minesweeper:
                 self.name_input_active = False
             elif len(self.player_name) < 12 and event.unicode.isprintable():
                 self.player_name += event.unicode
+            # Save player name when changed
+            self.settings_mgr.set("player_name", self.player_name)
             return
 
         # Handle F11 key for fullscreen toggle
@@ -1617,6 +1916,9 @@ class Minesweeper:
             self.state = GameState.PLAYING
         elif self.menu_buttons["leaderboard"].handle_event(event):
             self.state = GameState.LEADERBOARD
+        elif self.menu_buttons["achievements"].handle_event(event):
+            self.state = GameState.ACHIEVEMENTS
+            self.current_ach_index = 0
         elif self.menu_buttons["settings"].handle_event(event):
             self.state = GameState.SETTINGS
         elif self.menu_buttons["fullscreen"].handle_event(event):
@@ -1627,6 +1929,12 @@ class Minesweeper:
 
     def _handle_settings_events(self, event: pygame.event.Event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            # Check dark mode toggle
+            if hasattr(self, "dark_mode_toggle_rect") and self.dark_mode_toggle_rect.collidepoint(event.pos):
+                self.dark_mode = not self.dark_mode
+                self.settings_mgr.set("dark_mode", self.dark_mode)
+                return
+            
             if self.name_input_rect.collidepoint(event.pos):
                 self.name_input_active = True
             else:
@@ -1639,6 +1947,8 @@ class Minesweeper:
                 self.name_input_active = False
             elif len(self.player_name) < 12 and event.unicode.isprintable():
                 self.player_name += event.unicode
+            # Save player name when changed
+            self.settings_mgr.set("player_name", self.player_name)
             return
 
         self.size_slider.handle_event(event)
@@ -1646,6 +1956,10 @@ class Minesweeper:
 
         self.board_size = self.size_slider.value
         self.num_mines = self.mines_slider.value
+        
+        # Save settings
+        self.settings_mgr.set("board_size", self.board_size)
+        self.settings_mgr.set("num_mines", self.num_mines)
 
         if self.settings_buttons["back"].handle_event(event):
             self.state = GameState.MENU
@@ -1654,20 +1968,27 @@ class Minesweeper:
             self.mines_slider.value = 10
             self.board_size = 9
             self.num_mines = 10
+            self.settings_mgr.set("board_size", 9)
+            self.settings_mgr.set("num_mines", 10)
         elif self.settings_buttons["intermediate"].handle_event(event):
             self.size_slider.value = 16
             self.mines_slider.value = 40
             self.board_size = 16
             self.num_mines = 40
+            self.settings_mgr.set("board_size", 16)
+            self.settings_mgr.set("num_mines", 40)
         elif self.settings_buttons["expert"].handle_event(event):
             self.size_slider.value = 22
             self.mines_slider.value = 99
             self.board_size = 22
             self.num_mines = 99
+            self.settings_mgr.set("board_size", 22)
+            self.settings_mgr.set("num_mines", 99)
 
         for name, button in self.theme_buttons.items():
             if button.handle_event(event):
                 self.current_theme = name
+                self.settings_mgr.set("theme", name)
 
     def _handle_game_events(self, event: pygame.event.Event):
         if self.game_buttons["menu"].handle_event(event):
@@ -1686,10 +2007,23 @@ class Minesweeper:
                         self._place_mines(x, y)
                         self.first_click = False
                         self.start_time = time.time()
-                    self._reveal_cell(x, y)
+                        self.audio_mgr.play("click")
+                    else:
+                        cell = self.board[y][x]
+                        # Check if clicking on a revealed numbered cell with all flags correctly placed
+                        if cell.is_revealed and cell.adjacent_mines > 0 and not cell.is_mine:
+                            if self._check_auto_reveal(x, y):
+                                self.audio_mgr.play("win")
+                            else:
+                                self._reveal_cell(x, y)
+                                self.audio_mgr.play("click")
+                        else:
+                            self._reveal_cell(x, y)
+                            self.audio_mgr.play("click")
                 elif event.button == 3:  # Right click
                     if not self.first_click:
                         self._toggle_flag(x, y)
+                        self.audio_mgr.play("flag")
 
     def _handle_end_events(self, event: pygame.event.Event):
         if self.end_buttons["menu"].handle_event(event):
@@ -1709,6 +2043,19 @@ class Minesweeper:
             self.current_lb_index = (self.current_lb_index - 1) % len(configs)
         elif self.lb_buttons["next"].handle_event(event) and configs:
             self.current_lb_index = (self.current_lb_index + 1) % len(configs)
+
+    def _handle_achievements_events(self, event: pygame.event.Event):
+        """Handle achievements screen events."""
+        if not hasattr(self, "ach_back_button"):
+            return
+
+        if self.ach_back_button.handle_event(event):
+            self.state = GameState.MENU
+        elif hasattr(self, "ach_prev_button") and self.ach_prev_button.handle_event(event):
+            self.current_ach_index = max(0, self.current_ach_index - 5)
+        elif hasattr(self, "ach_next_button") and self.ach_next_button.handle_event(event):
+            achievements = self.stats_mgr.get_achievements()
+            self.current_ach_index = min(self.current_ach_index + 5, max(0, len(achievements) - 5))
 
     def run(self):
         running = True
@@ -1757,6 +2104,8 @@ class Minesweeper:
             self._handle_end_events(event)
         elif self.state == GameState.LEADERBOARD:
             self._handle_leaderboard_events(event)
+        elif self.state == GameState.ACHIEVEMENTS:
+            self._handle_achievements_events(event)
 
     def _draw_current_state(self):
         """Draw the current game state."""
@@ -1771,6 +2120,8 @@ class Minesweeper:
             self._draw_end_screen()
         elif self.state == GameState.LEADERBOARD:
             self._draw_leaderboard()
+        elif self.state == GameState.ACHIEVEMENTS:
+            self._draw_achievements()
 
 
 if __name__ == "__main__":

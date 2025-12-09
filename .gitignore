@@ -36,5 +36,6 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Game data (optional - décommentez si vous ne voulez pas partager les scores)
-# leaderboards/
+# Game data (user-specific)
+game_settings.json
+game_stats.json
